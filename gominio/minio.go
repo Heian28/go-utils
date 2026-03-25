@@ -65,6 +65,7 @@ func InitGoMinio(config GoMinioConfig, log *logrus.Logger) {
 type UploadFileResponse struct {
 	Key      string
 	Location string
+	FullPath string
 }
 
 // ExtractedFileInfo is a struct that represents the extracted file info.
@@ -77,15 +78,20 @@ type ExtractedFileInfo struct {
 	Buffer   []byte
 }
 
+type UploadFileRequest struct {
+	Key         string
+	Location    string
+	FileBuffer  []byte
+	FileSize    int64
+	ContentType string
+}
+
 // UploadFile is a function that uploads a file to Minio.
-func (g *gminio) UploadFile(
-	ctx context.Context,
-	location string,
-	key string,
-	fileBuffer []byte,
-	fileSize int64,
-	contentType string,
-) (*UploadFileResponse, error) {
+func (g *gminio) UploadFile(ctx context.Context, request *UploadFileRequest) (*UploadFileResponse, error) {
+	if request == nil {
+		return nil, errors.New("request config should not be empty")
+	}
+
 	bucket := g.conf.ProjectName
 	exists, err := g.checkBucket(ctx, bucket)
 	if err != nil {
@@ -96,15 +102,15 @@ func (g *gminio) UploadFile(
 		g.log.Errorf("[GoMinio] Bucket not found: %+v", bucket)
 		return nil, errors.New("bucket not found")
 	}
-	dest := fmt.Sprintf("%s/%s", location, key)
+	dest := fmt.Sprintf("%s/%s", request.Location, request.Key)
 	info, err := g.client.PutObject(
 		ctx,
 		bucket,
 		dest,
-		bytes.NewReader(fileBuffer),
-		fileSize,
+		bytes.NewReader(request.FileBuffer),
+		request.FileSize,
 		minio.PutObjectOptions{
-			ContentType: contentType,
+			ContentType: request.ContentType,
 		},
 	)
 	if err != nil {
@@ -116,6 +122,7 @@ func (g *gminio) UploadFile(
 	return &UploadFileResponse{
 		Key:      info.Key,
 		Location: info.Location,
+		FullPath: fmt.Sprintf("%s/%s", info.Location, info.Key),
 	}, nil
 }
 
