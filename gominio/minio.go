@@ -235,3 +235,7 @@ func (g *gminio) checkBucket(
 	}
 	return exists, nil
 }
+
+func (g *gminio) Client() *minio.Client {
+	return g.client
+}

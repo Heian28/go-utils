@@ -155,3 +155,7 @@ func (r *rds) DeleteByPattern(ctx context.Context, pattern string, batch int64) 
 	}
 	return nil
 }
+
+func (r *rds) Client() *redis.Client {
+	return r.rdb
+}
