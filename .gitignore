@@ -2,3 +2,5 @@
 logs
 main.go
 testutil/
+CLAUDE.md
+.claude

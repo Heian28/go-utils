@@ -4,23 +4,23 @@ A collection of utility packages for Go application development covering databas
 
 ## 📋 Table of Contents
 
--   [Features](#features)
--   [Installation](#installation)
--   [Available Packages](#available-packages)
--   [Usage](#usage)
--   [Contributing](#contributing)
+- [Features](#features)
+- [Installation](#installation)
+- [Available Packages](#available-packages)
+- [Usage](#usage)
+- [Contributing](#contributing)
 
 ## ✨ Features
 
--   **Database**: PostgreSQL and MongoDB support with GORM
--   **HTTP Framework**: Fiber framework utilities (error handling, response, middleware)
--   **Logging**: Structured logging with Logrus and file rotation
--   **Storage**: AWS S3 and MinIO clients
--   **Messaging**: RabbitMQ publisher and consumer
--   **Cache**: Redis client with JSON serialization
--   **Email**: SMTP email sender with template support
--   **Encryption**: AES encryption/decryption utilities
--   **Testing**: Test utilities for development
+- **Database**: PostgreSQL and MongoDB support with GORM
+- **HTTP Framework**: Fiber framework utilities (error handling, response, middleware)
+- **Logging**: Structured logging with Logrus and file rotation
+- **Storage**: AWS S3 and MinIO clients
+- **Messaging**: RabbitMQ publisher and consumer
+- **Cache**: Redis client with JSON serialization
+- **Email**: SMTP email sender with template support
+- **Encryption**: AES encryption/decryption utilities
+- **Testing**: Test utilities for development
 
 ## 🚀 Installation
 
@@ -38,16 +38,19 @@ Package for PostgreSQL database connection and management using GORM.
 
 **Features:**
 
--   Configurable connection pooling
--   Retry mechanism for connections
--   Query logging with slow query detection
--   Transaction support
--   Multiple connection support
+- Configurable connection pooling
+- Retry mechanism for connections
+- Query logging with slow query detection
+- Transaction support
+- Multiple connection support
 
 **Usage Example:**
 
 ```go
-import "github.com/Heian28/go-utils/db/gopostgres"
+import (
+    "time"
+    "github.com/Heian28/go-utils/db/gopostgres"
+)
 
 config := gopostgres.GoPostgresConfiguration{
     Host:                  "localhost",
@@ -87,10 +90,6 @@ err := trx.WithTransaction(ctx, func(tx *gorm.DB) error {
     return nil
 })
 ```
-
-#### MongoDB (`db/gomongo`)
-
-Package for MongoDB connection (under development).
 
 ### HTTP Framework (Fiber)
 
@@ -153,11 +152,11 @@ Package for structured logging with Logrus and file rotation.
 
 **Features:**
 
--   JSON formatted logs
--   File rotation with Lumberjack
--   Colorized console output
--   Production/Development mode
--   Custom fields support
+- JSON formatted logs
+- File rotation with Lumberjack
+- Colorized console output
+- Production/Development mode
+- Custom fields support
 
 **Usage Example:**
 
@@ -255,11 +254,11 @@ Package for publishing and consuming messages from RabbitMQ with encryption supp
 
 **Features:**
 
--   Publisher with retry mechanism
--   Consumer with panic recovery
--   Message encryption (AES)
--   Topic-based routing
--   Multiple queue support
+- Publisher with retry mechanism
+- Consumer with panic recovery
+- Message encryption (AES)
+- Topic-based routing
+- Multiple queue support
 
 **Usage Example:**
 
@@ -311,7 +310,10 @@ Package for cache operations using Redis with JSON serialization.
 **Usage Example:**
 
 ```go
-import "github.com/Heian28/go-utils/goredis"
+import (
+    "time"
+    "github.com/Heian28/go-utils/goredis"
+)
 
 config := goredis.GoRedisConfig{
     Addr:     "localhost:6379",
@@ -333,6 +335,56 @@ err := redis.Delete(ctx, "user:123")
 
 // Delete by pattern
 err := redis.DeleteByPattern(ctx, "user:*", 100)
+```
+
+#### Go Cache (`gocache`)
+
+Package for cache operations using Redis with MessagePack serialization for better performance.
+
+**Features:**
+
+- MessagePack serialization for faster performance
+- Support for batch operations
+- Pattern-based operations
+- Upsert functionality with TTL preservation
+
+**Usage Example:**
+
+```go
+import "github.com/Heian28/go-utils/gocache"
+
+config := gocache.GoCacheConfig{
+    URI:          "localhost:6379",
+    User:         "",
+    Password:     "",
+    Database:     0,
+    PoolSize:     10,
+    MinIdleConns: 10,
+    MaxRetries:   5,
+}
+
+cache := gocache.New(config, log)
+
+// Save data
+err := cache.Save(ctx, "user:123", userData, 1*time.Hour)
+
+// Get data
+var userData User
+err := cache.Get(ctx, "user:123", &userData)
+
+// Delete data
+err := cache.Delete(ctx, "user:123")
+
+// Get by pattern
+var results []string
+err := cache.GetByPattern(ctx, "user:*", &results)
+
+// Delete by pattern
+err := cache.DeleteByPattern(ctx, "user:*", 100)
+
+// Upsert with TTL preservation or new TTL
+duration := 1 * time.Hour
+err := cache.Upsert(ctx, "user:123", userData, &duration)
 ```
 
 ### Email (`gomail`)
@@ -390,7 +442,27 @@ decrypted, err := encryptor.Decrypt(encrypted)
 
 ### Testing (`testutil`)
 
-Package utilities for testing (under development).
+Package utilities for testing including test HTTP handlers, consumers, and error utilities.
+
+**Features:**
+
+- Test HTTP handlers with request/response mocking
+- Test consumer utilities for message testing
+- Test error utilities
+
+**Usage Example:**
+
+```go
+import "github.com/Heian28/go-utils/testutil"
+
+// Test HTTP handler
+testHandler := testutil.NewTestHandler()
+response := testHandler.TestRequest("GET", "/test", nil)
+
+// Test consumer
+testConsumer := testutil.NewTestConsumer()
+err := testConsumer.TestMessage("user.created", userData)
+```
 
 ## 🔧 Configuration
 
@@ -402,11 +474,11 @@ Some packages require configuration through structs. Make sure to configure them
 
 Logs will be saved in the `logs/` directory with the following format:
 
--   Format: `app-YYYY-MM-DD.log`
--   Rotation: Max 10MB per file
--   Retention: 28 days
--   Backup: 3 files
--   Compression: Enabled
+- Format: `app-YYYY-MM-DD.log`
+- Rotation: Max 10MB per file
+- Retention: 28 days
+- Backup: 3 files
+- Compression: Enabled
 
 ## 📝 Complete Example
 
@@ -418,10 +490,10 @@ package main
 import (
     "context"
     "time"
-
     "github.com/Heian28/go-utils/gologger"
     "github.com/Heian28/go-utils/db/gopostgres"
     "github.com/Heian28/go-utils/goredis"
+    "github.com/Heian28/go-utils/gocache"
     "github.com/Heian28/go-utils/fiber/goerror"
     "github.com/Heian28/go-utils/fiber/goresponse"
     "github.com/Heian28/go-utils/fiber/gomiddleware"
@@ -446,12 +518,19 @@ func main() {
     db := gopostgres.New(false, dbConfig, gologger.Logger)
     defer db.Close()
 
-    // Initialize Redis
+    // Initialize Redis (JSON serialization)
     redisConfig := goredis.GoRedisConfig{
         Addr:     "localhost:6379",
         Database: 0,
     }
     redis := goredis.New(redisConfig, gologger.Logger, false)
+
+    // Initialize Go Cache (MessagePack serialization for better performance)
+    cacheConfig := gocache.GoCacheConfig{
+        URI:      "localhost:6379",
+        Database: 1, // Use different database than goredis
+    }
+    cache := gocache.New(cacheConfig, gologger.Logger)
 
     // Initialize Fiber app
     app := fiber.New()
@@ -477,10 +556,10 @@ func main() {
 
 Contributions are welcome! Please create an issue or pull request for:
 
--   Bug fixes
--   New features
--   Documentation improvements
--   Performance optimizations
+- Bug fixes
+- New features
+- Documentation improvements
+- Performance optimizations
 
 ## 📄 License
 
@@ -490,14 +569,29 @@ This repository uses the license determined by the repository owner.
 
 This repository uses several popular libraries:
 
--   [GORM](https://gorm.io/) - ORM for database
--   [Fiber](https://gofiber.io/) - Web framework
--   [Logrus](https://github.com/sirupsen/logrus) - Structured logger
--   [Redis Go Client](https://github.com/redis/go-redis) - Redis client
--   [RabbitMQ Go Client](https://github.com/rabbitmq/amqp091-go) - RabbitMQ client
--   [MinIO Go Client](https://github.com/minio/minio-go) - MinIO client
--   [AWS SDK Go v2](https://github.com/aws/aws-sdk-go-v2) - AWS SDK
+- [GORM](https://gorm.io/) - ORM for database
+- [Fiber](https://gofiber.io/) - Web framework
+- [Logrus](https://github.com/sirupsen/logrus) - Structured logger
+- [Redis Go Client](https://github.com/redis/go-redis) - Redis client
+- [RabbitMQ Go Client](https://github.com/rabbitmq/amqp091-go) - RabbitMQ client
+- [MinIO Go Client](https://github.com/minio/minio-go) - MinIO client
+- [AWS SDK Go v2](https://github.com/aws/aws-sdk-go-v2) - AWS SDK
 
 ---
 
-**Note**: Some packages are still under development. Please check the documentation or source code for more complete implementation details.
+## 📈 Performance Considerations
+
+- **gocache vs goredis**: Use `gocache` for better performance with MessagePack serialization, especially for high-throughput applications. Use `goredis` when you need JSON serialization compatibility.
+- **Logging**: Structured logging with JSON format for production and colored output for development
+- **Connection Pooling**: All database and cache packages support configurable connection pooling for better performance
+
+## 📚 Additional Resources
+
+- [GORM Documentation](https://gorm.io/docs/)
+- [Fiber Web Framework](https://gofiber.io/)
+- [Redis Go Client](https://github.com/redis/go-redis)
+- [Logrus Logger](https://github.com/sirupsen/logrus)
+
+---
+
+**Note**: All packages are actively maintained and production-ready. The MongoDB package is planned for future implementation.
