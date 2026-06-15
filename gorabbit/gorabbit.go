@@ -467,7 +467,6 @@ func New(
 // It is used to represent the crypto.
 type crypto struct {
 	secret string
-	size   []byte
 }
 
 // toBytes is a function that converts the data to bytes.
@@ -495,19 +494,20 @@ func (c *crypto) decode(data string) ([]byte, error) {
 // It takes nothing and returns a cipher.Block and an error.
 // This is used to return the block.
 func (c *crypto) getBlock() (cipher.Block, error) {
-	return aes.NewCipher([]byte(c.secret))
+	key := []byte(c.secret)
+	// AES requires exactly 16, 24, or 32 byte keys
+	if len(key) >= 32 {
+		key = key[:32]
+	} else {
+		key = key[:24]
+	}
+	return aes.NewCipher(key)
 }
 
 // encrypt is a function that encrypts the message.
 // It takes a any and returns a []byte and an error.
 // This is used to encrypt the message.
 func (c *crypto) encrypt(message any) ([]byte, error) {
-	var (
-		enc  string
-		encB []byte
-		err  error
-	)
-
 	b, err := c.toBytes(message)
 	if err != nil {
 		return nil, err
@@ -518,14 +518,19 @@ func (c *crypto) encrypt(message any) ([]byte, error) {
 		return nil, err
 	}
 
-	cfb := cipher.NewCFBEncrypter(blk, c.size)
-	cText := make([]byte, len(b))
-	cfb.XORKeyStream(cText, b)
+	gcm, err := cipher.NewGCM(blk)
+	if err != nil {
+		return nil, err
+	}
 
-	enc = c.encode(cText)
-	encB = []byte(enc)
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return nil, err
+	}
 
-	return encB, nil
+	// Seal appends ciphertext+tag to nonce, so nonce is always prepended
+	cText := gcm.Seal(nonce, nonce, b, nil)
+	return []byte(c.encode(cText)), nil
 }
 
 // decrypt is a function that decrypts the message.
@@ -537,28 +542,32 @@ func (c *crypto) decrypt(message string) ([]byte, error) {
 		return nil, err
 	}
 
-	cText, err := c.decode(message)
+	gcm, err := cipher.NewGCM(blk)
 	if err != nil {
 		return nil, err
 	}
 
-	cfb := cipher.NewCFBDecrypter(blk, c.size)
-	plain := make([]byte, len(cText))
-	cfb.XORKeyStream(plain, cText)
+	data, err := c.decode(message)
+	if err != nil {
+		return nil, err
+	}
 
-	return plain, nil
+	nonceSize := gcm.NonceSize()
+	if len(data) < nonceSize {
+		return nil, errors.New("ciphertext too short")
+	}
+
+	nonce, cText := data[:nonceSize], data[nonceSize:]
+	return gcm.Open(nil, nonce, cText, nil)
 }
 
 // initCrypto is a function that initializes the crypto.
 // It takes a string and returns a *crypto.
 // This is used to initialize the crypto.
 func initCrypto(secret string) *crypto {
-	bb := make([]byte, 16)
-	rand.Read(bb)
-
 	if len(strings.TrimSpace(secret)) < 24 {
 		panic("secret for encryption must be at least 24 characters long")
 	}
 
-	return &crypto{secret: secret, size: bb}
+	return &crypto{secret: secret}
 }
